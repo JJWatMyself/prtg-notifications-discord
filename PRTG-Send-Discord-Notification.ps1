@@ -16,6 +16,7 @@
 #    [string]$sensorURL     - the sensor URL so you can access it directly
 #    [string]$deviceURL     - the device URL 
 #    [string]$serviceURL    - the service URL
+#    [string]$webhookURI    - the Discord webhook URI
 # 
 # Requirements
 # ------------------
@@ -36,7 +37,7 @@
 # ------------------
 # Version  Date        Notes
 # 1.0      9/06/2019  Initial Release
-#
+# 2.0      12/12/2022 JJW Version fork with fixes and new features, e.g. TLS and logos
 # ------------------
 # (c) 2019 Michael Metully
 
@@ -50,7 +51,8 @@ param(
     [string]$lastup = "falsetime",
     [string]$sensorURL = "http://www.google.com",
     [string]$deviceURL = "http://www.google.com",
-    [string]$serviceURL = "http://www.google.com"
+    [string]$serviceURL = "http://www.google.com",
+    [string]$uri = "https://www.google.com"
 )
 
 ################
@@ -58,28 +60,41 @@ param(
 ################
 
 #PRTG Server
-$PRTGUsername = "REPLACE ME"
-$PRTGPasshash  = REPLACE ME
+$PRTGUsername = "prtgadmin"
+$PRTGPasshash  = "prtgadmin"
+#logo URLs, test these in a browser to ensure are still valid
+$prtglogo = "https://is5-ssl.mzstatic.com/image/thumb/Purple125/v4/27/e3/5a/27e35a98-a778-a0fb-d70c-a92ad601e423/source/60x60bb.jpg"
+#Status logos are from this page
+# https://www.paessler.com/manuals/prtg/sensor_states
+$downlogo = "https://manuals.paessler.com/i_status_red.png"
+$uplogo = "https://manuals.paessler.com/i_status_green_zoom90.png"
+$unknownlogo = "https://manuals.paessler.com/i_status_grey.png"
+$msglogo = $unknownlogo
 
 #Acknowledgement Message for alerts ack'd via Discord
 $ackmessage = "Problem has been acknowledged via Discord"
 
 #Directory for logging
-$logDirectory = "C:\temp\prtg-notifications-discord.log"
-
-# configure this URL to be your actual webhook URL
-$uri = "REPLACE ME"
+$logDirectory = "C:\ProgramData\Paessler\PRTG Network Monitor\Logs\custom_exe\discord_webhook.log"
 
 # the acknowledgement URL 
 $ackURL = [string]::Format("{0}/api/acknowledgealarm.htm?id={1}&ackmsg={2}&username={3}&passhash={4}",$serviceURL,$sensorID,[uri]::EscapeDataString($ackmessage),$PRTGUsername,$PRTGPasshash);
 
 # the title of your message, different templates for not up, up and acknowledged
 if($status -ne "Up")
-{ $title = [string]::Format("{0} on {1} is in a {2} state!", $sensor, $device, $status) }
+{ $title = [string]::Format("{0} on {1} is in a state: {2}", $sensor, $device, $status) }
 elseif($status -eq "Up")
-{ $title = [string]::Format("{0} on {1} is up again!", $sensor, $device); $ackURL = ""; }
+{ $title = [string]::Format("{0} on {1} is: UP", $sensor, $device); $ackURL = ""; }
 elseif($status -eq "Acknowledged")
 { $title = [string]::Format("The problem with {0} on {1} has been acknowledged.", $sensor, $device); $ackURL = ""; }
+
+if($status -eq "Down")
+{ $msglogo = $downlogo }
+elseif($status -eq "Down ended (now: Up)")
+{ $msglogo = $uplogo }
+#elseif($status -eq "Acknowledged")
+#{ $msglogo = $uplogo }
+
 
 # accept all HTTPS certificates, necessary for the webhook 
 add-type @"
@@ -96,13 +111,18 @@ add-type @"
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 
 ########################
-
+#Help found here
+# https://birdie0.github.io/discord-webhooks-guide/discord_webhook.html
 $body = ConvertTo-Json -Depth 6 @{
     content = $($title)
+    avatar_url = $($prtglogo)
     embeds = @(
         @{
             title = 'Details'
             description = "[Sensor Page]($sensorURL) - [Device Page]($deviceURL) - [Acknowledge Alert]($ackURL)"
+            thumbnail = @{
+                url =  $($msglogo)
+            }
             fields = @(
                 @{
                 name = 'Current State'
@@ -130,6 +150,7 @@ $body = ConvertTo-Json -Depth 6 @{
 $enc = [system.Text.Encoding]::UTF8
 $encodedBody = $enc.GetBytes($body)
 
+[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"
 try 
 { Invoke-RestMethod -uri $uri -Method Post -body $encodedBody -ContentType 'application/json'; exit 0; }
 Catch
