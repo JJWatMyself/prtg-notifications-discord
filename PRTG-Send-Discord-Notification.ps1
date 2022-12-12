@@ -23,8 +23,6 @@
 # - [IMPORTANT] PRTG Sample powershell scripts must work - Guide for installing PowerShell based sensors: https://kb.paessler.com/users/my_answers/71356
 # - A webhook for your channel (see https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
 # - This script located in <PRTG Home directory>\Notifications\EXE\ eg C:\Program Files (x86)\PRTG Network Monitor\Notifications\EXE
-# - Create a notification template
-#     -Sample sensor list: -sensor '%sensor' -sensorID '%sensorid' -status '%status' -message '%message' -since '%since' -lastup '%lastup' -device '%device' -sensorURL '%linksensor' -deviceURL '%linkdevice' -serviceURL '%serviceurl'
 # 
 # Modification Resources
 # The script I adapted this from (MSTeams Notifications) Full installation guide can be found here: https://kb.paessler.com/en/topic/72306#
@@ -33,6 +31,12 @@
 # Other inputs this script can recieve: https://kb.paessler.com/en/topic/373-what-placeholders-can-i-use-with-prtg
 # Note, In order for the script to function you will need to replace all instances of: REPLACE ME
 #
+# TIP - create a new PRTG Notification Template
+# Execute Program = enabled
+# Executable File = name of this script from drop down list
+# Parameters to paste
+# -sensor '%sensor' -sensorID '%sensorid' -status '%status' -message '%message' -since '%since' -lastup '%lastup' -device '%device' -sensorURL '%linksensor' -deviceURL '%linkdevice' -serviceURL '%serviceurl' -uri 'https://discord.com/api/webhooks/your_webhook_uri_here'
+
 # Version History 
 # ------------------
 # Version  Date        Notes
@@ -60,6 +64,7 @@ param(
 ################
 
 #PRTG Server
+#defaults for new install below, update to match your environment
 $PRTGUsername = "prtgadmin"
 $PRTGPasshash  = "prtgadmin"
 #logo URLs, test these in a browser to ensure are still valid
