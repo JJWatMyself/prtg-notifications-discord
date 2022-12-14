@@ -73,6 +73,7 @@ $prtglogo = "https://is5-ssl.mzstatic.com/image/thumb/Purple125/v4/27/e3/5a/27e3
 # https://www.paessler.com/manuals/prtg/sensor_states
 $downlogo = "https://manuals.paessler.com/i_status_red.png"
 $uplogo = "https://manuals.paessler.com/i_status_green_zoom90.png"
+$warninglogo = "https://manuals.paessler.com/i_status_yellow.png"
 $unknownlogo = "https://manuals.paessler.com/i_status_grey.png"
 $msglogo = $unknownlogo
 
@@ -97,6 +98,8 @@ if($status -eq "Down")
 { $msglogo = $downlogo }
 elseif($status -eq "Down ended (now: Up)")
 { $msglogo = $uplogo }
+elseif($status -eq "Down ended (now: Warning)")
+{ $msglogo = $warninglogo }
 #elseif($status -eq "Acknowledged")
 #{ $msglogo = $uplogo }
 
